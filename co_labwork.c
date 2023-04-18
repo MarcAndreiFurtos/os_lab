@@ -159,8 +159,10 @@ void handleMenu(char filename[], struct stat buff) {
 
 bool isCFile(char *filename) {
   int len = strlen(filename);
-  if (len > 0 && dirRes->d_name[len - 1] == 'c') {
+  if (len > 0 && filename[len - 1] == 'c') {
+    return true;
   }
+  return false;
 }
 
 int main(int argc, char *argv[]) {
@@ -182,7 +184,11 @@ int main(int argc, char *argv[]) {
           lstat(argv[i], &buff); // returns 0 on success and -1 on failure
 
       if (result == 0) {
-        handleMenu(argv[i], buff);
+        if (isCFile(argv[i])) {
+          system("./compileCfile.sh");
+        } else {
+          handleMenu(argv[i], buff);
+        }
       } else {
         printf("Could not read info about file.\n");
       }
