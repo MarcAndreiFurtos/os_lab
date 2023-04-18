@@ -1,12 +1,14 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -61,17 +63,6 @@ int handleDirectory(char filename[]) {
   DIR *dir;
   dir = opendir(filename);
   int count = directory(dir);
-  //    struct dirent *entry;
-  //  int count = 0;
-  //    while((entry = readdir(dir)) != NULL)
-  //  {
-  //        char *name = entry->d_name;
-  //        if(strstr(name,".c")!=NULL)
-  //       {
-  //            count++;
-  //        }
-  //    }
-  //
   return count;
 }
 
@@ -166,20 +157,44 @@ void handleMenu(char filename[], struct stat buff) {
   }
 }
 
+bool isCFile(char *filename) {
+  int len = strlen(filename);
+  if (len > 0 && dirRes->d_name[len - 1] == 'c') {
+  }
+}
+
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     printf("Usage: %s [file1 file2 ...]\n", argv[0]);
     exit(EXIT_FAILURE);
   }
-  struct stat buff;
 
   for (int i = 1; i < argc; i++) {
-    int result = lstat(argv[i], &buff); // returns 0 on success and -1 on
-                                        // failure
-    if (result == 0) {
-      handleMenu(argv[i], buff);
-    } else {
-      printf("could not read info about file");
+    pid_t pid = fork(); // create a child process
+
+    if (pid == -1) {
+      printf("Failed to create a child process.\n");
+      exit(EXIT_FAILURE);
+    } else if (pid == 0) {
+      // child process
+      struct stat buff;
+      int result =
+          lstat(argv[i], &buff); // returns 0 on success and -1 on failure
+
+      if (result == 0) {
+        handleMenu(argv[i], buff);
+      } else {
+        printf("Could not read info about file.\n");
+      }
+
+      exit(EXIT_SUCCESS);
     }
   }
+
+  // wait for all child processes to finish
+  for (int i = 1; i < argc; i++) {
+    wait(NULL);
+  }
+
+  return 0;
 }
