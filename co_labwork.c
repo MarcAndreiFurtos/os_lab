@@ -185,7 +185,9 @@ int main(int argc, char *argv[]) {
 
       if (result == 0) {
         if (isCFile(argv[i])) {
-          system("./compileCfile.sh");
+          char command[100];
+          sprintf(command, "./compileFile.sh %s", argv[i]);
+          system(command);
         } else {
           handleMenu(argv[i], buff);
         }
