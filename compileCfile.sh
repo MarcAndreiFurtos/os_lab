@@ -9,7 +9,7 @@ if [ $# -eq 0 ]; then
 fi
 
 if test -f "$1"; then
-	result=$(gcc -Wall "$1" 2>&1 | tee /dev/tty)
+	result=$(gcc -Wall -o m "$1" 2>&1 | tee /dev/tty)
 	error=$(echo "$result" | grep -c "error" | wc -l)
 	warning=$(echo "$result" | grep -c "warning" | wc -l)
 
