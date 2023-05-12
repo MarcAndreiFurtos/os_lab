@@ -237,13 +237,11 @@ int main(int argc, char *argv[]) {
           printf("Failed to create a child process.\n");
           exit(EXIT_FAILURE);
         } else if (pid == 0) {
-          // char command[100];
-          // sprintf(command, "./compileCfile.sh %s", argv[i]);
-          // system(command);
           close(pipa[0]);
           char *args[] = {"./compileCfile.sh", argv[i], NULL};
           dup2(pipa[1], STDOUT_FILENO);
           execvp(args[0], args);
+          handleMenu(argv[i], buff);
           exit(EXIT_SUCCESS);
         }
         close(pipa[1]);
@@ -259,6 +257,7 @@ int main(int argc, char *argv[]) {
           exit(EXIT_FAILURE);
         } else if (pid == 0) {
           printf("%d\n", countLines(argv[i]));
+          handleMenu(argv[i], buff);
           exit(EXIT_SUCCESS);
         }
       } else if (isSymbolicLink(argv[i])) {
@@ -268,6 +267,7 @@ int main(int argc, char *argv[]) {
           exit(EXIT_FAILURE);
         } else if (pid == 0) {
           change_link_permissions(argv[i]);
+          handleMenu(argv[i], buff);
           exit(EXIT_SUCCESS);
         }
       } else {
