@@ -206,13 +206,10 @@ bool isSymbolicLink(const char *path) {
   return S_ISLNK(path_stat.st_mode);
 }
 
-int change_link_permissions(const char *path) {
-  // Set the permissions for the symbolic link
-  if (chmod(path, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP) == -1) {
-    return -1; // Return -1 on error
-  }
-
-  return 0; // Return 0 on success
+void change_link_permissions(char *path) {
+  char *args[] = {"chmod", "u=rwx,g=rw,o=", path, NULL};
+  execvp(args[0], args);
+  exit(0);
 }
 
 int parse_output(const char *output, int *num1, int *num2) {
@@ -343,6 +340,14 @@ int main(int argc, char *argv[]) {
           handleMenu(argv[i], buff);
           exit(EXIT_SUCCESS);
         }
+      }
+      // parent process
+      int status;
+      pid_t child_pid = wait(&status);
+      if (WIFEXITED(status)) {
+        int exit_code = WEXITSTATUS(status);
+        printf("The process with PID %d has ended with the exit code %d.\n",
+               child_pid, exit_code);
       }
     } else {
       printf("Could not read info about file.\n");
