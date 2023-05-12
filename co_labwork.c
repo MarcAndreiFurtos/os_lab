@@ -215,11 +215,72 @@ int change_link_permissions(const char *path) {
   return 0; // Return 0 on success
 }
 
+int parse_output(const char *output, int *num1, int *num2) {
+  // Parse the first number
+  *num1 = atoi(output);
+  // Find the end of the first line
+  const char *end_of_first_line = strchr(output, '\n');
+  // If there is no second line, return an error
+  if (!end_of_first_line || *(end_of_first_line + 1) == '\0') {
+    return -1;
+  }
+  // Parse the second number
+  *num2 = atoi(end_of_first_line + 1);
+  return 0;
+}
+
+void compute_score(const char *file_name, int num_errors, int num_warnings) {
+  int score;
+  if (num_errors == 0 && num_warnings == 0) {
+    score = 10;
+  } else if (num_errors > 0) {
+    score = 1;
+  } else if (num_warnings > 10) {
+    score = 2;
+  } else {
+    score = 2 + 8 * (10 - num_warnings) / 10;
+  }
+
+  FILE *fp = fopen("grades.txt", "a");
+  if (fp == NULL) {
+    printf("Error: failed to open grades.txt for writing.\n");
+    return;
+  }
+  printf("%s: %d\n", file_name, score);
+  fprintf(fp, "%s: %d\n", file_name, score);
+  fclose(fp);
+}
+
+void create_file_in_dir(const char *dir_name) {
+  char *file_name =
+      malloc(strlen(dir_name) + 10); // Allocate memory for the file name
+  sprintf(file_name, "%s_file.txt", dir_name); // Construct the file name
+  char *file_path = malloc(strlen(dir_name) + strlen(file_name) +
+                           2); // Allocate memory for the file path
+  sprintf(file_path, "%s/%s", dir_name, file_name); // Construct the file path
+  int fd = open(file_path, O_CREAT | O_WRONLY,
+                0644); // Create the file with read/write permissions for user
+                       // and group, and read permissions for others
+  if (fd == -1) {
+    perror("Error creating file"); // Print an error message if the file could
+                                   // not be created
+    exit(EXIT_FAILURE);
+  }
+  close(fd); // Close the file
+  printf("File '%s' created in directory '%s'.\n", file_name,
+         dir_name); // Print a success message
+  free(file_name);  // Free the memory allocated for the file name
+  free(file_path);  // Free the memory allocated for the file path
+}
+
 int main(int argc, char *argv[]) {
   if (argc < 2) {
     printf("Usage: %s [file1 file2 ...]\n", argv[0]);
     exit(EXIT_FAILURE);
   }
+
+  int a = 0;
+  int num[2] = {0, 0};
 
   for (int i = 1; i < argc; i++) {
     // child process
@@ -241,7 +302,6 @@ int main(int argc, char *argv[]) {
           char *args[] = {"./compileCfile.sh", argv[i], NULL};
           dup2(pipa[1], STDOUT_FILENO);
           execvp(args[0], args);
-          handleMenu(argv[i], buff);
           exit(EXIT_SUCCESS);
         }
         close(pipa[1]);
@@ -249,7 +309,10 @@ int main(int argc, char *argv[]) {
         char line[100];
         while (fgets(line, 100, fp) != NULL) {
           printf("%s", line);
+          sscanf(line, "%*[^0-9]%d", &num[a]);
+          a++;
         }
+        compute_score(argv[i], num[0], num[1]);
       } else if (isFile(argv[i]) && isCFile(argv[i]) == false) {
         pid_t pid = fork(); // create a child process
         if (pid == -1) {
@@ -276,6 +339,7 @@ int main(int argc, char *argv[]) {
           printf("Failed to create a child process.\n");
           exit(EXIT_FAILURE);
         } else if (pid == 0) {
+          create_file_in_dir(argv[i]);
           handleMenu(argv[i], buff);
           exit(EXIT_SUCCESS);
         }

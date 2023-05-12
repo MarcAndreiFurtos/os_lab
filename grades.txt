@@ -1,0 +1,7 @@
+test1.c: 10
+test1.c: 10
+test1.c: 10
+test1.c: 10
+test1.c: 10
+test1.c: 10
+test1.c: 1
